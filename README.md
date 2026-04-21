@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 📚 Learn Everything
 
 **A unified learning ecosystem** — Course platform, tutor booking, community forum, marketplace, and real-time chat in one monolithic Laravel application.
@@ -581,3 +582,7 @@ This project is for educational purposes.
 ---
 
 *Built with ❤️ using Laravel, Tailwind CSS, Alpine.js & Socket.IO*
+=======
+# 1_PPL_TEST
+TEST
+>>>>>>> 4a26ea938c6b4cd4eba6ba270a5bbd3fd397ced6
