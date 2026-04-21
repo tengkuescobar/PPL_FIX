@@ -1,106 +1,176 @@
-## EPIC 3 – Layanan Tutor & Home Visit
+# EPIC 3 – Layanan Tutor & Home Visit
+
 **PBI:** PBI-7 (Daftar & Profil Tutor) · PBI-8 (Form Booking Home Visit) · PBI-9 (Rating & Ulasan)
 
-## BACKEND (BE) 
+---
 
-### Database Migrations
+## PBI-7 – Daftar & Profil Tutor
+
+### BE
+
+**Migrations**
 ```
 database/migrations/2026_04_16_200002_create_tutors_table.php
 database/migrations/2026_04_19_000002_add_status_to_tutors_table.php
-database/migrations/2026_04_16_200019_create_home_visit_bookings_table.php
-database/migrations/2026_04_20_100701_create_tutor_availabilities_table.php
-database/migrations/2026_04_20_100702_add_booking_payment_fields_to_home_visit_bookings_table.php
-database/migrations/2026_04_16_200020_create_tutor_reviews_table.php
 database/migrations/2026_04_20_090736_add_bank_details_to_tutors_table.php
 database/migrations/2026_04_20_100703_add_wallet_fields_to_tutors_table.php
-database/migrations/2026_04_20_100703_create_tutor_withdrawals_table.php
-database/migrations/2026_04_20_143522_add_user_id_to_tutor_withdrawals_table.php
 ```
-> Tutor: `user_id`, `bio`, `specialization`, `qualifications`, `rate_per_hour`, `photo`, `status` (pending/approved/rejected).  
-> HomeVisitBooking: `user_id`, `tutor_id`, `date`, `time`, `address`, `status`, `price`, `payment_proof`.  
-> TutorAvailability: `tutor_id`, `day_of_week`, `start_time`, `end_time`.  
-> TutorReview: `user_id`, `tutor_id`, `booking_id`, `rating` (1–5), `comment`.
+> Tutor: `user_id`, `bio`, `specialization`, `qualifications`, `rate_per_hour`, `photo`, `status` (pending/approved/rejected).
 
-### Models
+**Models**
 ```
-app/Models/Tutor.php              ← belongsTo User, hasMany Course, hasMany TutorReview, hasMany TutorAvailability
-app/Models/HomeVisitBooking.php   ← belongsTo User, belongsTo Tutor
-app/Models/TutorReview.php        ← belongsTo User, belongsTo Tutor
-app/Models/TutorAvailability.php  ← belongsTo Tutor
-app/Models/TutorPayment.php       ← belongsTo Tutor
-app/Models/TutorWithdrawal.php    ← belongsTo Tutor, belongsTo User
+app/Models/Tutor.php   ← belongsTo User, hasMany Course, hasMany TutorReview, hasMany TutorAvailability
 ```
 
-### Controllers
+**Controllers**
 ```
 app/Http/Controllers/TutorController.php
     index()   → list tutor approved + filter spesialisasi
     show()    → profil lengkap tutor + kursus + rating rata-rata
 
-app/Http/Controllers/BookingController.php
-    create()        → form pemesanan home visit
-    store()         → simpan booking + validasi ketersediaan
-    payment()       → halaman pembayaran booking
-    processPayment()→ validasi & simpan bukti bayar (upload gambar jpg/png max 2MB); status tetap pending hingga admin konfirmasi
-    updateStatus()  → update status booking (selesai/batal)
-
-app/Http/Controllers/TutorReviewController.php
-    store()   → simpan rating & ulasan setelah sesi selesai
-
-app/Http/Controllers/Tutor/ProfileController.php
-    show(), edit(), update()  → tutor kelola profil sendiri
-
-app/Http/Controllers/Tutor/AvailabilityController.php
-    index(), store(), destroy() → tutor atur jadwal ketersediaan
-
 app/Http/Controllers/Api/TutorApiController.php
     index(), show() → JSON data tutor
+
+app/Http/Controllers/Tutor/ProfileController.php
+    show(), edit(), update()   → tutor kelola profil sendiri
 ```
 
-### Requests
+### FE
+
+**Views**
 ```
-app/Http/Requests/StoreBookingRequest.php   ← validasi form booking
+resources/views/tutors/index.blade.php    ← daftar tutor approved: foto, spesialisasi, rating
+resources/views/tutors/show.blade.php     ← profil lengkap tutor + kursus tutor + ulasan
+resources/views/tutor/profile.blade.php   ← tutor kelola profil (dashboard tutor)
+resources/views/tutor/dashboard.blade.php ← ringkasan booking & pendapatan tutor
 ```
 
-## FRONTEND (FE)
-### Views
-```
-resources/views/tutors/index.blade.php       ← daftar tutor + filter
-resources/views/tutors/show.blade.php        ← profil tutor + form ulasan + tombol booking
-resources/views/tutors/booking.blade.php     ← form booking home visit (tanggal, jam, alamat)
-resources/views/bookings/payment.blade.php   ← halaman bayar booking
-resources/views/tutor/profile.blade.php      ← tutor kelola profil (dashboard tutor)
-resources/views/tutor/availability.blade.php ← tutor atur jadwal
-resources/views/tutor/dashboard.blade.php    ← ringkasan booking & pendapatan tutor
-resources/views/tutor/payments.blade.php     ← riwayat pembayaran masuk
-resources/views/tutor/withdrawals.blade.php  ← riwayat penarikan dana
-resources/views/tutor/withdrawal-create.blade.php ← form tarik dana
-```
-
-### Routes
+**Routes**
 ```php
 // Public
 Route::get('/tutors', [TutorController::class, 'index'])->name('tutors.index');
 Route::get('/tutors/{tutor}', [TutorController::class, 'show'])->name('tutors.show');
 
+// Tutor area (middleware: auth + role:tutor)
+Route::prefix('tutor')->middleware(['auth', 'role:tutor'])->group(function () {
+    Route::get('/profile', [Tutor\ProfileController::class, 'show'])->name('tutor.profile');
+    // edit & update profile
+});
+```
+
+### Checklist
+- [ ] Daftar tutor approved tampil dengan foto, spesialisasi, rating
+
+---
+
+## PBI-8 – Form Booking Home Visit
+
+### BE
+
+**Migrations**
+```
+database/migrations/2026_04_16_200019_create_home_visit_bookings_table.php
+database/migrations/2026_04_20_100701_create_tutor_availabilities_table.php
+database/migrations/2026_04_20_100702_add_booking_payment_fields_to_home_visit_bookings_table.php
+database/migrations/2026_04_20_100703_create_tutor_withdrawals_table.php
+database/migrations/2026_04_20_143522_add_user_id_to_tutor_withdrawals_table.php
+```
+> HomeVisitBooking: `user_id`, `tutor_id`, `date`, `time`, `address`, `status`, `price`, `payment_proof`.  
+> TutorAvailability: `tutor_id`, `day_of_week`, `start_time`, `end_time`.
+
+**Models**
+```
+app/Models/HomeVisitBooking.php   ← belongsTo User, belongsTo Tutor
+app/Models/TutorAvailability.php  ← belongsTo Tutor
+app/Models/TutorPayment.php       ← belongsTo Tutor
+app/Models/TutorWithdrawal.php    ← belongsTo Tutor, belongsTo User
+```
+
+**Controllers**
+```
+app/Http/Controllers/BookingController.php
+    create()         → form pemesanan home visit
+    store()          → simpan booking + validasi ketersediaan
+    payment()        → halaman pembayaran booking
+    processPayment() → validasi & simpan bukti bayar (upload gambar jpg/png max 2MB);
+                       status tetap pending hingga admin konfirmasi
+    updateStatus()   → update status booking (selesai/batal)
+
+app/Http/Controllers/Tutor/AvailabilityController.php
+    index(), store(), destroy() → tutor atur jadwal ketersediaan
+```
+
+**Requests**
+```
+app/Http/Requests/StoreBookingRequest.php   ← validasi form booking
+```
+
+### FE
+
+**Views**
+```
+resources/views/tutors/booking.blade.php          ← form booking home visit (tanggal, jam, alamat)
+resources/views/bookings/payment.blade.php        ← halaman bayar booking + upload bukti bayar
+resources/views/tutor/availability.blade.php      ← tutor atur jadwal ketersediaan
+resources/views/tutor/payments.blade.php          ← riwayat pembayaran masuk
+resources/views/tutor/withdrawals.blade.php       ← riwayat penarikan dana
+resources/views/tutor/withdrawal-create.blade.php ← form tarik dana
+```
+
+**Routes**
+```php
 // Auth
-Route::post('/tutors/{tutor}/reviews', [TutorReviewController::class, 'store'])->name('tutors.reviews.store');
 Route::get('/tutors/{tutor}/book', [BookingController::class, 'create'])->name('bookings.create');
 Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
 Route::get('/bookings/{booking}/payment', [BookingController::class, 'payment'])->name('bookings.payment');
 Route::post('/bookings/{booking}/pay', [BookingController::class, 'processPayment'])->name('bookings.pay');
 Route::patch('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.updateStatus');
 
-// Tutor area (middleware: auth + role:tutor)
-Route::prefix('tutor')->middleware(['auth','role:tutor'])->group(function () {
-    Route::get('/profile', [Tutor\ProfileController::class, 'show'])->name('tutor.profile');
+// Tutor area
+Route::prefix('tutor')->middleware(['auth', 'role:tutor'])->group(function () {
     Route::get('/availability', [Tutor\AvailabilityController::class, 'index'])->name('tutor.availability');
-    // ...
+    // store & destroy availability
 });
 ```
 
-### Checklist PBI
-- [ ] PBI-7: Daftar tutor approved tampil dengan foto, spesialisasi, rating
-- [ ] PBI-8: Form booking dengan kalender jadwal + validasi slot tersedia, konfirmasi & pembayaran
-- [ ] PBI-9: Form rating bintang (1–5) + kolom komentar, tampil di halaman profil tutor
+### Checklist
+- [ ] Form booking dengan kalender jadwal + validasi slot tersedia, konfirmasi & pembayaran
+
+---
+
+## PBI-9 – Rating & Ulasan
+
+### BE
+
+**Migrations**
+```
+database/migrations/2026_04_16_200020_create_tutor_reviews_table.php
+```
+> TutorReview: `user_id`, `tutor_id`, `booking_id`, `rating` (1–5), `comment`.
+
+**Models**
+```
+app/Models/TutorReview.php   ← belongsTo User, belongsTo Tutor
+```
+
+**Controllers**
+```
+app/Http/Controllers/TutorReviewController.php
+    store()   → simpan rating & ulasan setelah sesi selesai
+```
+
+### FE
+
+**Views**
+```
+resources/views/tutors/show.blade.php   ← tambahkan: form rating bintang (1–5) + kolom komentar + tampilkan daftar ulasan
+```
+
+**Routes**
+```php
+Route::post('/tutors/{tutor}/reviews', [TutorReviewController::class, 'store'])->name('tutors.reviews.store');
+```
+
+### Checklist
+- [ ] Form rating bintang (1–5) + kolom komentar, tampil di halaman profil tutor
 
