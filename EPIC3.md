@@ -14,6 +14,7 @@ database/migrations/2026_04_16_200002_create_tutors_table.php
 database/migrations/2026_04_19_000002_add_status_to_tutors_table.php
 database/migrations/2026_04_20_090736_add_bank_details_to_tutors_table.php
 database/migrations/2026_04_20_100703_add_wallet_fields_to_tutors_table.php
+database/migrations/2026_04_19_063232_create_tutor_payments_table.php
 ```
 > Tutor: `user_id`, `bio`, `specialization`, `qualifications`, `rate_per_hour`, `photo`, `status` (pending/approved/rejected).
 
